@@ -1,0 +1,14 @@
+# Ignore virtual environment
+movieRecommender/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore dataset files (optional, unless you want them in the repository)
+data/
+
+# Ignore log and temporary files
+*.log
+*.tmp
