@@ -1,28 +1,12 @@
 import pandas as pd
 
-def load_data():
+def load_data(ratings_path="data/ratings.csv", movies_path="data/movies.csv"):
     """
-    Load the MovieLens 25M dataset from CSV files.
-    Returns:
-        movies (DataFrame): Movie metadata with titles and genres.
-        ratings (DataFrame): User ratings for movies.
+    Load the movies and ratings datasets.
+    Default paths are used for production, but custom paths can be provided for testing.
     """
-    # Load ratings data
-    ratings = pd.read_csv(
-        'data/ratings.csv',  # Path to ratings.csv
-        usecols=['userId', 'movieId', 'rating', 'timestamp']  # Only necessary columns
-    )
-
-    # Load movies data
-    movies = pd.read_csv(
-        'data/movies.csv',  # Path to movies.csv
-        usecols=['movieId', 'title', 'genres']  # Only necessary columns
-    )
-
-    # Rename columns for consistency
-    ratings.rename(columns={'userId': 'user_id', 'movieId': 'movie_id'}, inplace=True)
-    movies.rename(columns={'movieId': 'movie_id'}, inplace=True)
-
+    ratings = pd.read_csv(ratings_path, usecols=["userId", "movieId", "rating", "timestamp"])
+    movies = pd.read_csv(movies_path, usecols=["movieId", "title", "genres"])
     return movies, ratings
 
 def preprocess_movies(movies):
