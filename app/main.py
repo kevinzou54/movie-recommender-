@@ -1,12 +1,19 @@
 import sys
 import os
+import numpy as np
+from rapidfuzz import process
 
 # Add the project root directory to the Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
-from app.preprocess import load_data, preprocess_movies
+from app.preprocess import (
+    load_data,
+    preprocess_movies,
+    save_preprocessed_data,
+    load_preprocessed_data,
+)
 from app.recommender import Recommender
-from rapidfuzz import process
+
 
 def fuzzy_match_movies(input_movies, all_titles, threshold=90):
     """
@@ -35,13 +42,33 @@ def fuzzy_match_movies(input_movies, all_titles, threshold=90):
 
     return matched_movies
 
+
 if __name__ == "__main__":
-    # Load and preprocess data
-    movies, ratings = load_data()
-    movies = preprocess_movies(movies)
+    # Check for preprocessed data
+    movies, ratings = load_preprocessed_data()
+
+    # If no preprocessed data exists, preprocess raw data and save as pickle files
+    if movies is None or ratings is None:
+        print("No preprocessed data found. Loading raw data...")
+        movies, ratings = load_data()
+        movies = preprocess_movies(movies)
+        save_preprocessed_data(movies, ratings)
 
     # Initialize the recommender system
     recommender = Recommender(movies)
+
+    # Try to load a trained model
+    model_path = "models/recommender_model.pkl"
+    recommender.load_model(model_path)
+
+    # If no model is found, train a new one and save it
+    if not recommender.model:
+        print("No pre-trained model found. Training a new model...")
+        # Example: Generate a dummy feature matrix for training
+        feature_matrix = np.random.rand(len(movies), 10)
+        recommender.train_model(feature_matrix)
+        recommender.save_model(model_path)
+
 
     # Prompt the user for input
     print("Enter 5 movies you have watched and enjoyed:")

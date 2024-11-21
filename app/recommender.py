@@ -1,6 +1,8 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
+import os
+import pickle
 
 class Recommender:
     def __init__(self, movies):
@@ -11,6 +13,7 @@ class Recommender:
         """
         self.movies = movies
         self.tfidf_matrix = self._build_tfidf_matrix()
+        self.model = None  # Ensure the model attribute is always initialized
 
     def _build_tfidf_matrix(self):
         """
@@ -21,6 +24,15 @@ class Recommender:
         # Use TfidfVectorizer to encode genres
         tfidf = TfidfVectorizer(stop_words="english")
         return tfidf.fit_transform(self.movies["genres"])
+
+    def train_model(self, feature_matrix):
+        """
+        Train a placeholder model. Replace with actual logic for collaborative filtering or other techniques.
+        """
+        from sklearn.neighbors import NearestNeighbors
+        self.model = NearestNeighbors(metric="cosine", algorithm="brute")
+        self.model.fit(feature_matrix)
+        print("Model trained")
 
     def recommend(self, movie_title, top_n=5):
         """
@@ -54,17 +66,17 @@ class Recommender:
         """
         Recommend movies based on a list of highly rated movies.
         Args:
-        rated_movies (DataFrame): DataFrame of highly rated movies (user's preferences).
-        top_n (int): Number of recommendations to return.
-    Returns:
-        recommendations (DataFrame): Top recommended movies.
-    """
+            rated_movies (DataFrame): DataFrame of highly rated movies (user's preferences).
+            top_n (int): Number of recommendations to return.
+        Returns:
+            recommendations (DataFrame): Top recommended movies.
+        """
         all_sim_scores = {}
 
         # Iterate over each movie the user rated highly
         for _, row in rated_movies.iterrows():
             try:
-                idx = self.movies[self.movies["movie_id"] == row["movie_id"]].index[0]
+                idx = self.movies[self.movies["title"] == row["title"]].index[0]
                 sim_scores = list(enumerate(cosine_similarity(self.tfidf_matrix[idx], self.tfidf_matrix)[0]))
                 for movie_idx, score in sim_scores:
                     if movie_idx not in all_sim_scores:
@@ -76,9 +88,30 @@ class Recommender:
 
         # Sort aggregated scores
         sorted_movies = sorted(all_sim_scores.items(), key=lambda x: x[1], reverse=True)
-    
+
         # Get top N recommended movies
         top_indices = [i[0] for i in sorted_movies[:top_n]]
         return self.movies.iloc[top_indices][["title", "genres"]]
 
+    def save_model(self, model_path="models/recommender_model.pkl"):
+        """
+        Save the recommender object (including TF-IDF matrix) to a pickle file.
+        """
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
+        with open(model_path, "wb") as f:
+            pickle.dump(self, f)
+        print(f"Model saved to {model_path}")
 
+    @staticmethod
+    def load_model(model_path="models/recommender_model.pkl"):
+        """
+        Load the recommender object from a pickle file.
+        """
+        try:
+            with open(model_path, "rb") as f:
+                recommender = pickle.load(f)
+            print(f"Model loaded from {model_path}")
+            return recommender
+        except FileNotFoundError:
+            print(f"Model file {model_path} not found.")
+            return None
